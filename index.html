@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Caminho Para o Céu — RPG 2D</title>
+<style>
+:root{--gold:#e5c46a;--panel:rgba(8,12,17,.88);--line:#806b37}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07100b;font-family:Georgia,serif;color:#fff;touch-action:none}
+canvas{display:block;width:100vw;height:100vh;image-rendering:auto}
+#hud{position:fixed;inset:0;pointer-events:none}
+.panel{position:absolute;background:var(--panel);border:1px solid var(--line);box-shadow:0 5px 22px #0008;border-radius:12px}
+#stats{left:12px;top:12px;width:260px;padding:10px}
+.title{font-size:17px;color:var(--gold);font-weight:bold;margin-bottom:7px}
+.row{display:grid;grid-template-columns:82px 1fr 34px;gap:5px;align-items:center;font:12px Arial,sans-serif;margin:4px 0}
+.bar{height:9px;background:#222;border-radius:8px;overflow:hidden;border:1px solid #444}.fill{height:100%;width:50%;background:var(--gold);transition:width .2s}
+#quest{right:12px;top:12px;width:300px;padding:12px;font:13px Arial,sans-serif}
+#quest b{color:var(--gold)}
+#message{left:50%;bottom:18px;transform:translateX(-50%);width:min(680px,92vw);padding:12px 16px;text-align:center;font:14px Arial,sans-serif;display:none}
+#buttons{position:absolute;right:18px;bottom:18px;display:flex;gap:8px;pointer-events:auto}
+.action{border:1px solid var(--gold);background:#111c;color:#fff;border-radius:13px;padding:11px 13px;font-weight:bold}
+.action:active{transform:scale(.95)}
+#joy{position:absolute;left:18px;bottom:18px;width:150px;height:150px;pointer-events:auto}
+.jbtn{position:absolute;width:50px;height:50px;border:1px solid var(--gold);background:#111b;color:white;border-radius:13px;font-size:20px}
+.jup{left:50px;top:0}.jdown{left:50px;bottom:0}.jleft{left:0;top:50px}.jright{right:0;top:50px}
+#inventory{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(500px,92vw);padding:18px;pointer-events:auto}
+.item{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #493f27;font:14px Arial,sans-serif}
+#closeInv{float:right}
+@media(max-width:700px){#stats{width:220px}.row{grid-template-columns:68px 1fr 28px;font-size:10px}#quest{top:190px;right:12px;width:235px;font-size:11px}#buttons{right:10px;bottom:12px;flex-wrap:wrap;width:180px;justify-content:flex-end}.action{padding:9px;font-size:11px}#message{bottom:175px}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div id="stats" class="panel">
+    <div class="title">✝ CAMINHO PARA O CÉU</div>
+    <div id="statRows"></div>
+  </div>
+  <div id="quest" class="panel"><b>📜 PRIMEIRA MISSÃO</b><br><br><span id="questText">Encontre o Ancião da vila.</span></div>
+  <div id="message" class="panel"></div>
+  <div id="buttons">
+    <button class="action" id="pray">🙏 ORAR</button>
+    <button class="action" id="inv">🎒 INVENTÁRIO</button>
+    <button class="action" id="sleep">🌙 DORMIR</button>
+    <button class="action" id="interact">💬 INTERAGIR</button>
+  </div>
+  <div id="joy">
+    <button class="jbtn jup" data-k="up">▲</button><button class="jbtn jdown" data-k="down">▼</button>
+    <button class="jbtn jleft" data-k="left">◀</button><button class="jbtn jright" data-k="right">▶</button>
+  </div>
+  <div id="inventory" class="panel">
+    <button class="action" id="closeInv">FECHAR</button>
+    <div class="title">🎒 Inventário</div><div id="items"></div>
+  </div>
+</div>
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)} addEventListener('resize',resize);resize();
+
+const TILE=48, MW=80,MH=55;
+const world={w:MW*TILE,h:MH*TILE};
+const p={x:12*TILE+24,y:28*TILE+24,r:14,speed:190};
+const cam={x:0,y:0};
+const keys={up:false,down:false,left:false,right:false};
+const stats={faith:70,authority:45,holiness:65,fasting:30,health:100,peace:60,wisdom:30,discernment:25,hunger:18,thirst:18};
+const inv={Bíblia:1,"Pão":3,"Água":3,"Pergaminho":1,"Madeira":5};
+let phase=0,night=false,last=performance.now(),talkTarget=null,questDone=false,prayerCD=0;
+
+const statNames={faith:["✝ Fé","faith"],authority:["🛡 Autoridade","authority"],holiness:["🕊 Santidade","holiness"],fasting:["🙏 Jejum","fasting"],health:["❤ Saúde","health"],peace:["☮ Paz","peace"],wisdom:["📖 Sabedoria","wisdom"],discernment:["👁 Discernimento","discernment"],hunger:["🍖 Fome","hunger"],thirst:["💧 Sede","thirst"]};
+const rows=document.getElementById('statRows');
+for(const [k,[n,key]] of Object.entries(statNames)) rows.innerHTML+=`<div class="row"><span>${n}</span><div class="bar"><div class="fill" id="f-${key}"></div></div><span id="v-${key}">0</span></div>`;
+
+function say(t,ms=4000){const el=document.getElementById('message');el.innerHTML=t;el.style.display='block';clearTimeout(say.t);say.t=setTimeout(()=>el.style.display='none',ms)}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function rnd(a,b){return Math.random()*(b-a)+a}
+
+const trees=[],houses=[],npcs=[],water=[];
+function addTree(x,y){trees.push({x,y,r:22})}
+function addHouse(x,y,w=100,h=75,type='casa'){houses.push({x,y,w,h,type})}
+function addNPC(x,y,name,msg,kind='villager'){npcs.push({x,y,name,msg,kind})}
+for(let i=0;i<170;i++){let x=rnd(1,MW-2)*TILE,y=rnd(2,MH-2)*TILE;if(Math.abs(x-p.x)<350&&Math.abs(y-p.y)<280){i--;continue} addTree(x,y)}
+addHouse(8*TILE,24*TILE,120,90,'casa'); addHouse(17*TILE,24*TILE,120,90,'templo'); addHouse(14*TILE,34*TILE,100,75,'cabana'); addHouse(26*TILE,17*TILE,120,85,'casa');
+addNPC(20*TILE,28*TILE,'Ancião','A missão começa com um passo de fé. Atravesse a floresta e procure o caminho para o porto.','elder');
+addNPC(16*TILE,29*TILE,'Maria','Quando o medo chegar, pare, respire e ore.','friend');
+addNPC(23*TILE,30*TILE,'Elias','Nem todo perigo será visível aos olhos. Peça discernimento.','friend');
+
+function rectHitCircle(r,cx,cy,cr){let x=clamp(cx,r.x,r.x+r.w),y=clamp(cy,r.y,r.y+r.h);return (cx-x)**2+(cy-y)**2<cr**2}
+function blocked(x,y){if(x<20||y<20||x>world.w-20||y>world.h-20)return true;for(const t of trees)if((x-t.x)**2+(y-t.y)**2<(p.r+t.r-5)**2)return true;for(const h of houses)if(rectHitCircle(h,x,y,p.r))return true;return false}
+
+function drawTree(t){ctx.fillStyle='#51351f';ctx.fillRect(t.x-6,t.y+7,12,28);ctx.fillStyle='#183d25';ctx.beginPath();ctx.arc(t.x,t.y,25,0,7);ctx.fill();ctx.fillStyle='#22552f';ctx.beginPath();ctx.arc(t.x-16,t.y+8,18,0,7);ctx.arc(t.x+16,t.y+8,18,0,7);ctx.fill()}
+function drawHouse(h){ctx.fillStyle='#76533a';ctx.fillRect(h.x-h.w/2,h.y-h.h/2,h.w,h.h);ctx.fillStyle=h.type==='templo'?'#55515a':'#56352c';ctx.beginPath();ctx.moveTo(h.x-h.w/2-8,h.y-h.h/2);ctx.lineTo(h.x,h.y-h.h/2-45);ctx.lineTo(h.x+h.w/2+8,h.y-h.h/2);ctx.closePath();ctx.fill();ctx.fillStyle='#2d2018';ctx.fillRect(h.x-12,h.y+5,24,40);ctx.fillStyle='#e8d38a';ctx.font='28px serif';ctx.textAlign='center';ctx.fillText(h.type==='templo'?'✝':'⌂',h.x,h.y-8)}
+function drawNPC(n){ctx.fillStyle=n.kind==='elder'?'#d9b24c':'#7b9eb0';ctx.fillRect(n.x-11,n.y-2,22,35);ctx.fillStyle='#c98e63';ctx.beginPath();ctx.arc(n.x,n.y-13,11,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.font='12px Arial';ctx.textAlign='center';ctx.fillText(n.name,n.x,n.y-30)}
+function drawPlayer(){ctx.fillStyle='#c98e63';ctx.beginPath();ctx.arc(p.x,p.y-17,12,0,7);ctx.fill();ctx.fillStyle='#e6dfc9';ctx.fillRect(p.x-13,p.y-5,26,38);ctx.fillStyle='#674b2f';ctx.fillRect(p.x-15,p.y-28,30,7);ctx.strokeStyle='#d7bc6a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x+10,p.y-1);ctx.lineTo(p.x+19,p.y+25);ctx.stroke()}
+
+function drawWorld(){ctx.fillStyle='#47723c';ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.translate(-cam.x,-cam.y);
+  // paths
+  ctx.fillStyle='#b09261';ctx.fillRect(0,world.h/2-35,world.w,70);
+  ctx.fillStyle='#2f6684';ctx.fillRect(37*TILE,0,18*TILE,world.h);
+  ctx.fillStyle='#876642';ctx.fillRect(36*TILE,world.h/2-45,20*TILE,90);
+  // distant mountains
+  ctx.fillStyle='#355d42';ctx.beginPath();ctx.moveTo(0,12*TILE);for(let x=0;x<world.w;x+=120)ctx.lineTo(x,8*TILE+rnd(-40,40));ctx.lineTo(world.w,12*TILE);ctx.closePath();ctx.fill();
+  houses.forEach(drawHouse);trees.forEach(drawTree);npcs.forEach(drawNPC);drawPlayer();
+  ctx.restore();
+}
+function updateCam(){cam.x=clamp(p.x-W/2,0,world.w-W);cam.y=clamp(p.y-H/2,0,world.h-H)}
+
+function move(dt){let dx=(keys.right?1:0)-(keys.left?1:0),dy=(keys.down?1:0)-(keys.up?1:0);if(dx||dy){let l=Math.hypot(dx,dy);dx/=l;dy/=l;let nx=p.x+dx*p.speed*dt,ny=p.y+dy*p.speed*dt;if(!blocked(nx,p.y))p.x=nx;if(!blocked(p.x,ny))p.y=ny}}
+function nearby(){let best=null,bd=75;for(const n of npcs){let d=Math.hypot(n.x-p.x,n.y-p.y);if(d<bd){best=n;bd=d}}return best}
+function interact(){let n=nearby();if(!n){say('Aproxime-se de um NPC, templo ou cabana.');return}say(`<b>${n.name}</b><br><br>${n.msg}`);if(n.kind==='elder'&&!questDone){questDone=true;stats.faith+=10;stats.wisdom+=8;document.getElementById('questText').innerHTML='✓ Missão concluída!<br><br>Próxima etapa: siga pela estrada até o porto.';say('<b>MISSÃO COMPLETADA</b><br>O Ancião confiou a você a próxima etapa da jornada. Fé +10 • Sabedoria +8',5000)}}
+function pray(){if(prayerCD>0)return;prayerCD=8;stats.faith=clamp(stats.faith+5,0,100);stats.peace=clamp(stats.peace+8,0,100);stats.authority=clamp(stats.authority+2,0,100);say('<b>🙏 ORAÇÃO</b><br>Você se ajoelha e busca a Deus.<br>Fé +5 • Paz +8 • Autoridade +2')}
+function sleep(){if(!night){say('🌙 Ainda é dia. Procure um abrigo quando anoitecer.');return}stats.health=clamp(stats.health+20,0,100);stats.peace=clamp(stats.peace+10,0,100);stats.hunger=clamp(stats.hunger+8,0,100);stats.thirst=clamp(stats.thirst+8,0,100);say('<b>🌙 SONHO ESPIRITUAL</b><br>Você vê uma grande luz no céu e ouve: “Não temas. Continue o caminho.”',6000)}
+function showInv(){document.getElementById('items').innerHTML=Object.entries(inv).map(([k,v])=>`<div class="item"><span>${k}</span><b>${v}</b></div>`).join('');document.getElementById('inventory').style.display='block'}
+document.getElementById('closeInv').onclick=()=>document.getElementById('inventory').style.display='none';
+document.getElementById('pray').onclick=pray;document.getElementById('inv').onclick=showInv;document.getElementById('sleep').onclick=sleep;document.getElementById('interact').onclick=interact;
+
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='w'||k==='arrowup')keys.up=true;if(k==='s'||k==='arrowdown')keys.down=true;if(k==='a'||k==='arrowleft')keys.left=true;if(k==='d'||k==='arrowright')keys.right=true;if(k==='e')interact();if(k==='r')pray();if(k==='i')showInv()});
+addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(k==='w'||k==='arrowup')keys.up=false;if(k==='s'||k==='arrowdown')keys.down=false;if(k==='a'||k==='arrowleft')keys.left=false;if(k==='d'||k==='arrowright')keys.right=false});
+document.querySelectorAll('.jbtn').forEach(b=>{let k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+
+function tick(t){let dt=Math.min((t-last)/1000,.05);last=t;phase+=dt;prayerCD=Math.max(0,prayerCD-dt);
+  // 90 s day/night cycle
+  night=(phase%90)>55;
+  if(night)document.body.style.background='#050914';else document.body.style.background='#07100b';
+  stats.hunger=clamp(stats.hunger+dt*.7,0,100);stats.thirst=clamp(stats.thirst+dt*.9,0,100);
+  if(stats.hunger>88||stats.thirst>88)stats.health=clamp(stats.health-dt*1.2,0,100);
+  move(dt);updateCam();drawWorld();drawLighting();
+  for(const [key,[,prop]] of Object.entries(statNames)){document.getElementById('f-'+prop).style.width=clamp(stats[prop],0,100)+'%';document.getElementById('v-'+prop).textContent=Math.round(stats[prop])}
+  requestAnimationFrame(tick)}
+function drawLighting(){if(!night)return;ctx.fillStyle='rgba(5,10,25,.48)';ctx.fillRect(0,0,W,H);ctx.fillStyle='rgba(255,245,190,.12)';ctx.beginPath();ctx.arc(W-120,100,55,0,7);ctx.fill()}
+requestAnimationFrame(tick);
+say('<b>🌅 UM NOVO CAMINHO</b><br>Explore a vila. Encontre o Ancião e converse com ele.',5000);
+</script>
+</body>
+</html>
