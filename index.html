@@ -3,134 +3,445 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Caminho Para o Céu — RPG 2D</title>
+<title>Caminho Para o Céu — A Batalha Espiritual</title>
 <style>
-:root{--gold:#e5c46a;--panel:rgba(8,12,17,.88);--line:#806b37}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07100b;font-family:Georgia,serif;color:#fff;touch-action:none}
-canvas{display:block;width:100vw;height:100vh;image-rendering:auto}
+:root{--gold:#e5c46a;--panel:rgba(8,12,17,.92);--line:#806b37;--heaven:#87ceeb;--hell:#4a1515;
+  --holy:#ffd700;--dark:#2b0000;--faith:#d4af37;--evil:#8b0000;--angel:#fff8dc;--demon:#5c0000}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#050a08;font-family:'Georgia',serif;color:#fff;touch-action:none}
+canvas{display:block;width:100vw;height:100vh;image-rendering:pixelated}
 #hud{position:fixed;inset:0;pointer-events:none}
-.panel{position:absolute;background:var(--panel);border:1px solid var(--line);box-shadow:0 5px 22px #0008;border-radius:12px}
-#stats{left:12px;top:12px;width:260px;padding:10px}
-.title{font-size:17px;color:var(--gold);font-weight:bold;margin-bottom:7px}
-.row{display:grid;grid-template-columns:82px 1fr 34px;gap:5px;align-items:center;font:12px Arial,sans-serif;margin:4px 0}
-.bar{height:9px;background:#222;border-radius:8px;overflow:hidden;border:1px solid #444}.fill{height:100%;width:50%;background:var(--gold);transition:width .2s}
-#quest{right:12px;top:12px;width:300px;padding:12px;font:13px Arial,sans-serif}
+.panel{position:absolute;background:var(--panel);border:2px solid var(--line);box-shadow:0 6px 25px rgba(0,0,0,.6);border-radius:12px}
+#stats{left:15px;top:15px;width:300px;padding:14px}
+.title{font-size:18px;color:var(--gold);font-weight:bold;margin-bottom:10px;text-align:center;text-shadow:0 0 10px rgba(229,196,106,.3)}
+.row{display:grid;grid-template-columns:100px 1fr 35px;gap:6px;align-items:center;font-size:13px;margin:5px 0}
+.bar{height:11px;background:#1a1a1a;border-radius:6px;overflow:hidden;border:1px solid #333}
+.fill{height:100%;width:50%;transition:width .3s ease}
+.fill.health{background:linear-gradient(90deg,#a82020,#e04040)}
+.fill.faith{background:linear-gradient(90deg,#b8860b,#ffd700)}
+.fill.holy{background:linear-gradient(90deg,#4a6fa5,#87ceeb)}
+.fill.armor{background:linear-gradient(90deg,#6b4090,#9370db)}
+.fill.energy{background:linear-gradient(90deg,#2e7d32,#66bb6a)}
+#quest{right:15px;top:15px;width:340px;padding:14px;font-size:14px;line-height:1.6}
 #quest b{color:var(--gold)}
-#message{left:50%;bottom:18px;transform:translateX(-50%);width:min(680px,92vw);padding:12px 16px;text-align:center;font:14px Arial,sans-serif;display:none}
-#buttons{position:absolute;right:18px;bottom:18px;display:flex;gap:8px;pointer-events:auto}
-.action{border:1px solid var(--gold);background:#111c;color:#fff;border-radius:13px;padding:11px 13px;font-weight:bold}
+#message{left:50%;bottom:120px;transform:translateX(-50%);width:min(760px,92vw);padding:16px 24px;text-align:center;font-size:15px;display:none;z-index:100;line-height:1.5}
+#message.angelic{border-color:#ffd700;background:rgba(20,30,60,.95);box-shadow:0 0 25px rgba(255,215,0,.25)}
+#message.demonic{border-color:#8b0000;background:rgba(40,5,5,.95);box-shadow:0 0 25px rgba(139,0,0,.25)}
+#buttons{position:absolute;right:20px;bottom:20px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:auto;width:240px;justify-content:flex-end}
+.action{border:2px solid var(--gold);background:rgba(17,28,28,.9);color:#fff;border-radius:10px;padding:10px 12px;font-weight:bold;cursor:pointer;transition:all .2s;font-size:13px}
+.action:hover{background:rgba(40,58,58,.9);transform:translateY(-1px)}
 .action:active{transform:scale(.95)}
-#joy{position:absolute;left:18px;bottom:18px;width:150px;height:150px;pointer-events:auto}
-.jbtn{position:absolute;width:50px;height:50px;border:1px solid var(--gold);background:#111b;color:white;border-radius:13px;font-size:20px}
-.jup{left:50px;top:0}.jdown{left:50px;bottom:0}.jleft{left:0;top:50px}.jright{right:0;top:50px}
-#inventory{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(500px,92vw);padding:18px;pointer-events:auto}
-.item{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #493f27;font:14px Arial,sans-serif}
-#closeInv{float:right}
-@media(max-width:700px){#stats{width:220px}.row{grid-template-columns:68px 1fr 28px;font-size:10px}#quest{top:190px;right:12px;width:235px;font-size:11px}#buttons{right:10px;bottom:12px;flex-wrap:wrap;width:180px;justify-content:flex-end}.action{padding:9px;font-size:11px}#message{bottom:175px}}
+.action.attack{border-color:#a83030;background:rgba(60,15,15,.8)}
+.action.attack:hover{background:rgba(90,20,20,.9)}
+#joy{position:absolute;left:20px;bottom:20px;width:160px;height:160px;pointer-events:auto}
+.jbtn{position:absolute;width:52px;height:52px;border:2px solid var(--gold);background:rgba(17,28,28,.8);color:white;border-radius:10px;font-size:22px;display:flex;align-items:center;justify-content:center}
+.jup{left:54px;top:0}.jdown{left:54px;bottom:0}.jleft{left:0;top:54px}.jright{right:0;top:54px}
+#inventory,#craft,#bestiary,#blessings{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(540px,92vw);max-height:80vh;overflow-y:auto;padding:20px;pointer-events:auto;z-index:50}
+.item,.enemy-item,.blessing-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #493f27;font-size:14px}
+.craft-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #493f27;font-size:14px}
+.craft-item button{padding:6px 12px;border-radius:5px;border:none;background:var(--gold);color:#000;font-weight:bold;cursor:pointer}
+#closeInv,#closeCraft,#closeBest,#closeBless{float:right;margin-bottom:10px}
+.sep{margin:15px 0 8px 0;color:var(--gold);font-weight:bold;border-bottom:1px solid #333;padding-bottom:5px}
+#minimap{position:absolute;left:15px;bottom:15px;width:200px;height:150px;border:2px solid var(--gold);border-radius:8px;overflow:hidden;background:#050505;pointer-events:auto}
+#minimapCanvas{width:100%;height:100%}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center}
+.modal-content{background:var(--panel);border:3px solid var(--gold);border-radius:15px;padding:25px;max-width:500px;text-align:center;line-height:1.7}
+.modal-content h2{color:var(--gold);margin-bottom:15px}
+.modal-content button{margin-top:15px;padding:10px 25px;background:var(--gold);border:none;border-radius:8px;color:#000;font-weight:bold;cursor:pointer}
+@media(max-width:768px){
+  #stats{width:260px}
+  #quest{right:10px;top:200px;width:280px}
+  #buttons{bottom:15px;right:10px;width:180px}
+  #minimap{left:10px;bottom:180px}
+}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <div id="hud">
   <div id="stats" class="panel">
-    <div class="title">✝ CAMINHO PARA O CÉU</div>
+    <div class="title">⚔️ CAMINHO PARA O CÉU</div>
     <div id="statRows"></div>
   </div>
-  <div id="quest" class="panel"><b>📜 PRIMEIRA MISSÃO</b><br><br><span id="questText">Encontre o Ancião da vila.</span></div>
+  <div id="quest" class="panel">
+    <b>📜 A BATALHA ESPIRITUAL</b><br><br>
+    <span id="questText">O Senhor chamou você para lutar o bom combate da fé. Equipe-se com a armadura de Deus e resista ao diabo — ele fugirá de você! Comece falando com o Ancião Samuel.</span>
+  </div>
   <div id="message" class="panel"></div>
+  <div id="minimap"><canvas id="minimapCanvas"></canvas></div>
   <div id="buttons">
-    <button class="action" id="pray">🙏 ORAR</button>
-    <button class="action" id="inv">🎒 INVENTÁRIO</button>
-    <button class="action" id="sleep">🌙 DORMIR</button>
-    <button class="action" id="interact">💬 INTERAGIR</button>
+    <button class="action" id="pray">🙏 Orar</button>
+    <button class="action" id="bless">✨ Bênçãos</button>
+    <button class="action attack" id="attack">⚔️ Atacar</button>
+    <button class="action" id="inv">🎒 Inventário</button>
+    <button class="action" id="craft">🔨 Construir</button>
+    <button class="action" id="sleep">🌙 Descansar</button>
+    <button class="action" id="interact">💬 Interagir</button>
+    <button class="action" id="chop">🪓 Cortar</button>
+    <button class="action" id="best">📖 Seres</button>
   </div>
   <div id="joy">
-    <button class="jbtn jup" data-k="up">▲</button><button class="jbtn jdown" data-k="down">▼</button>
-    <button class="jbtn jleft" data-k="left">◀</button><button class="jbtn jright" data-k="right">▶</button>
+    <button class="jbtn jup" data-k="up">▲</button>
+    <button class="jbtn jdown" data-k="down">▼</button>
+    <button class="jbtn jleft" data-k="left">◀</button>
+    <button class="jbtn jright" data-k="right">▶</button>
   </div>
+
   <div id="inventory" class="panel">
-    <button class="action" id="closeInv">FECHAR</button>
-    <div class="title">🎒 Inventário</div><div id="items"></div>
+    <button class="action" id="closeInv">✕ Fechar</button>
+    <div class="title">🎒 Inventário</div>
+    <div id="items"></div>
+  </div>
+
+  <div id="craft" class="panel">
+    <button class="action" id="closeCraft">✕ Fechar</button>
+    <div class="title">🔨 Oficina Sagrada</div>
+    <div class="sep">Recursos</div>
+    <div id="craftRes"></div>
+    <div class="sep">Projetos Sagrados</div>
+    <div id="craftList"></div>
+  </div>
+
+  <div id="bestiary" class="panel">
+    <button class="action" id="closeBest">✕ Fechar</button>
+    <div class="title">📖 Livro dos Seres Espirituais</div>
+    <div class="sep">👼 ANJOS — Mensageiros de Luz</div>
+    <div id="angelList"></div>
+    <div class="sep">👑 TRINDADE — Deus Todo-Poderoso</div>
+    <div id="divineList"></div>
+    <div class="sep">👹 DEMÔNIOS — Espíritos das Trevas</div>
+    <div id="demonList"></div>
+    <div class="sep">😈 O INIMIGO</div>
+    <div id="enemyList"></div>
+  </div>
+
+  <div id="blessings" class="panel">
+    <button class="action" id="closeBless">✕ Fechar</button>
+    <div class="title">✨ Dons do Espírito Santo</div>
+    <div id="blessList"></div>
   </div>
 </div>
-<script>
-const c=document.getElementById('game'),ctx=c.getContext('2d');
-let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
-function resize(){W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)} addEventListener('resize',resize);resize();
 
-const TILE=48, MW=80,MH=55;
+<div id="divineModal" class="modal-bg">
+  <div class="modal-content">
+    <h2 id="divineTitle"></h2>
+    <p id="divineText"></p>
+    <button onclick="document.getElementById('divineModal').style.display='none'">Amém ✝</button>
+  </div>
+</div>
+
+<script>
+const CATEGORIES={ANGEL:'angel',DIVINE:'divine',DEMON:'demon',EVIL:'evil'};
+
+const ANGELS={
+  GABRIEL:{name:'Arcanjo Gabriel',title:'Mensageiro de Deus',icon:'👼',
+    description:'"Eu sou Gabriel, que estou presente diante de Deus, e fui enviado para falar contigo e te dar estas boas notícias." — Lucas 1:19',
+    power:'Anunciação e Revelação Divina',blessing:'Aumenta Sabedoria e Discernimento',verse:'Lucas 1:19'},
+  MICHAEL:{name:'Arcanjo Miguel',title:'Protetor e Guerreiro',icon:'⚔️',
+    description:'"E houve guerra no céu: Miguel e os seus anjos lutavam contra o dragão..." — Apocalipse 12:7',
+    power:'Guerra Espiritual e Proteção',blessing:'Aumenta Fé e Autoridade',verse:'Apocalipse 12:7'},
+  RAPHAEL:{name:'Arcanjo Rafael',title:'Curador Divino',icon:'💚',
+    description:'"Aquele que cura todas as tuas doenças..." — Salmo 103:3-4',
+    power:'Cura e Restauração',blessing:'Restaura Saúde e Paz',verse:'Salmo 103:3'},
+  ANGEL_LIGHT:{name:'Anjo da Luz',title:'Guardião dos Caminhos',icon:'✨',
+    description:'"Pois aos seus anjos dará ordem para te guardarem em todos os teus caminhos." — Salmo 91:11',
+    power:'Guarda e Proteção',blessing:'Proteção contra o mal',verse:'Salmo 91:11'},
+  ANGEL_WARRIOR:{name:'Anjo Guerreiro',title:'Exército do Senhor',icon:'🛡️',
+    description:'"O anjo do Senhor acampa-se ao redor dos que o temem, e os livra." — Salmo 34:7',
+    power:'Força e Escudo',blessing:'Aumenta Armadura Espiritual',verse:'Salmo 34:7'}
+};
+
+const DIVINE={
+  FATHER:{name:'Deus Pai',title:'Criador de Todas as Coisas',icon:'👑',
+    description:'"Eu sou o Alfa e o Ômega, o princípio e o fim, aquele que é, que era e que há de vir, o Todo-Poderoso." — Apocalipse 1:8',
+    attribute:'Onipotência, Amor Eterno, Criação',verse:'Apocalipse 1:8',blessing:'Fé máxima e Paz profunda'},
+  SON:{name:'Jesus Cristo',title:'O Caminho, a Verdade e a Vida',icon:'✝️',
+    description:'"Eu sou o caminho, a verdade e a vida; ninguém vem ao Pai, senão por mim." — João 14:6',
+    attribute:'Salvação, Graça, Luz do Mundo',verse:'João 14:6',blessing:'Salvação e Força Espiritual'},
+  SPIRIT:{name:'Espírito Santo',title:'O Consolador',icon:'🕊️',
+    description:'"Mas o Consolador, o Espírito Santo, que o Pai enviará em meu nome, ele vos ensinará todas as coisas..." — João 14:26',
+    attribute:'Sabedoria, Unção, Dons Espirituais',verse:'João 14:26',blessing:'Dons do Espírito e Sabedoria'}
+};
+
+const DEMONS={
+  PRIDE:{name:'Espírito de Orgulho',title:'Inimigo da Humildade',icon:'👿',
+    description:'"A soberba precede a ruína, e a altivez do espírito precede a queda." — Provérbios 16:18',
+    weakness:'Humildade e Oração',danger:'Enfraquece a Sabedoria',verse:'Provérbios 16:18',hp:40,damage:5},
+  FEAR:{name:'Espírito de Medo',title:'Terror das Trevas',icon:'😨',
+    description:'"Porque Deus não nos deu o espírito de temor, mas de fortalecimento, e de amor, e de moderação." — 2 Timóteo 1:7',
+    weakness:'Fé e Confiança em Deus',danger:'Enfraquece a Coragem',verse:'2 Timóteo 1:7',hp:35,damage:4},
+  LIE:{name:'Espírito da Mentira',title:'Pai da Mentira',icon:'👺',
+    description:'"Ele foi homicida desde o princípio, e não permaneceu na verdade." — João 8:44',
+    weakness:'Verdade e Palavra de Deus',danger:'Enfraquece o Discernimento',verse:'João 8:44',hp:45,damage:6},
+  DOUBT:{name:'Espírito de Dúvida',title:'Descrédito',icon:'❓',
+    description:'"Mas o que duvida é semelhante à onda do mar..." — Tiago 1:6',
+    weakness:'Fé Inabalável',danger:'Reduz a Fé gradualmente',verse:'Tiago 1:6',hp:30,damage:3},
+  ANGER:{name:'Espírito de Ira',title:'Fogo Descontrolado',icon:'😡',
+    description:'"A tua indignação te perturba?" — Salmo 37:8',
+    weakness:'Paz e Autocontrole',danger:'Reduz a Paz',verse:'Salmo 37:8',hp:50,damage:7},
+  LUST:{name:'Espírito de Cobiça',title:'Desejo Vão',icon:'🫣',
+    description:'"Não ameis o mundo, nem o que no mundo há." — 1 João 2:15',
+    weakness:'Santidade e Oração',danger:'Reduz a Santidade',verse:'1 João 2:15',hp:42,damage:5},
+  DESPAIR:{name:'Espírito de Desespero',title:'Sem Esperança',icon:'💔',
+    description:'"Porque eu bem sei os pensamentos que penso de vós, diz o Senhor; pensamentos de paz..." — Jeremias 29:11',
+    weakness:'Esperança em Cristo',danger:'Reduz a Paz e a Fé',verse:'Jeremias 29:11',hp:55,damage:8}
+};
+
+const DEVIL={name:'Satanás',title:'O Inimigo das Almas',icon:'👹',
+  description:'"O diabo, o vosso adversário, anda em derredor, como leão que ruge, procurando a quem possa tragar." — 1 Pedro 5:8',
+  strategy:'Mentira, engano, acusações e medo',
+  defeat:'Resista-o firmes na fé, sabendo que os mesmos sofrimentos se cumprem entre os vossos irmãos no mundo. — 1 Pedro 5:9',
+  verse:'1 Pedro 5:8',hp:300,damage:15};
+
+const SPIRIT_GIFTS={
+  WISDOM:{name:'Sabedoria',desc:'Entender o que é bom e perfeito',cost:15,verse:'1 Coríntios 12:8'},
+  FAITH_GIFT:{name:'Fé Inabalável',desc:'Confiança total em Deus',cost:20,verse:'1 Coríntios 12:9'},
+  HEALING:{name:'Cura',desc:'Restaurar a saúde',cost:25,verse:'1 Coríntios 12:9'},
+  PROPHECY:{name:'Profecia',desc:'Falar a palavra de Deus',cost:18,verse:'1 Coríntios 12:10'},
+  DISCERNMENT:{name:'Discernimento de Espíritos',desc:'Distinguir o bem do mal',cost:16,verse:'1 Coríntios 12:10'}
+};
+
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+const mc=document.getElementById('minimapCanvas'),mctx=mc.getContext('2d');
+
+let W=1920,H=1080,dpr=Math.min(window.devicePixelRatio||1,2);
+function resize(){
+  W=innerWidth;H=innerHeight;
+  c.width=W*dpr;c.height=H*dpr;
+  c.style.width=W+'px';c.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  mc.width=200;mc.height=150;
+}
+addEventListener('resize',resize);resize();
+
+const TILE=48,MW=150,MH=100;
 const world={w:MW*TILE,h:MH*TILE};
-const p={x:12*TILE+24,y:28*TILE+24,r:14,speed:190};
+
+const p={x:15*TILE+24,y:30*TILE+24,r:16,speed:200,
+  isBoat:false,boatSpeed:300,attackCooldown:0,attackPower:10,holyPower:0};
 const cam={x:0,y:0};
 const keys={up:false,down:false,left:false,right:false};
-const stats={faith:70,authority:45,holiness:65,fasting:30,health:100,peace:60,wisdom:30,discernment:25,hunger:18,thirst:18};
-const inv={Bíblia:1,"Pão":3,"Água":3,"Pergaminho":1,"Madeira":5};
-let phase=0,night=false,last=performance.now(),talkTarget=null,questDone=false,prayerCD=0;
 
-const statNames={faith:["✝ Fé","faith"],authority:["🛡 Autoridade","authority"],holiness:["🕊 Santidade","holiness"],fasting:["🙏 Jejum","fasting"],health:["❤ Saúde","health"],peace:["☮ Paz","peace"],wisdom:["📖 Sabedoria","wisdom"],discernment:["👁 Discernimento","discernment"],hunger:["🍖 Fome","hunger"],thirst:["💧 Sede","thirst"]};
+const stats={health:100,maxHealth:100,faith:75,holiness:60,peace:70,wisdom:35,discernment:25,
+  authority:20,armor:0,hunger:20,thirst:15,energy:100,holySpirit:50};
+
+const inv={"Bíblia":1,"Pão":10,"Água":10,"Fruta":5,"Pergaminho":3,"Madeira":0,"Tora":0,"Barco":0,
+  "Peixe":0,"Óleo Sagrado":2,"Salvação":1,"Oração":5};
+
+const recipes={
+  "Tora":{Madeira:3},
+  "Barco":{Madeira:25,Tora:3},
+  "Óleo Sagrado":{"Madeira":5,"Pergaminho":2}
+};
+
+let phase=0,night=false,last=performance.now(),prayerCD=0,chopTime=0,
+    trees=[],houses=[],npcs=[],waterAreas=[],fishSpots=[],enemies=[],angels=[],
+    boatBuilt=false,boat=null,questStep=0;
+
+const statNames={
+  health:["❤ Saúde","health","health"],
+  faith:["✝ Fé","faith","faith"],
+  holiness:["🕊 Santidade","holiness","holy"],
+  peace:["☮ Paz","peace","holy"],
+  wisdom:["📖 Sabedoria","wisdom","holy"],
+  discernment:["👁 Discernimento","discernment","armor"],
+  hunger:["🍖 Fome","hunger","energy"],
+  thirst:["💧 Sede","thirst","energy"],
+  energy:["⚡ Energia","energy","energy"],
+  holySpirit:["🕊 Espírito Santo","holySpirit","faith"]
+};
+
 const rows=document.getElementById('statRows');
-for(const [k,[n,key]] of Object.entries(statNames)) rows.innerHTML+=`<div class="row"><span>${n}</span><div class="bar"><div class="fill" id="f-${key}"></div></div><span id="v-${key}">0</span></div>`;
+for(const [k,[n,key,cls]] of Object.entries(statNames)){
+  rows.innerHTML+=`<div class="row"><span>${n}</span><div class="bar"><div class="fill ${cls}" id="f-${key}"></div></div><span id="v-${key}">0</span></div>`;
+}
 
-function say(t,ms=4000){const el=document.getElementById('message');el.innerHTML=t;el.style.display='block';clearTimeout(say.t);say.t=setTimeout(()=>el.style.display='none',ms)}
+function say(t,ms=4500,type='normal'){
+  const el=document.getElementById('message');
+  el.innerHTML=t;el.style.display='block';el.className='panel';
+  if(type==='angelic')el.className='panel angelic';
+  if(type==='demonic')el.className='panel demonic';
+  clearTimeout(say.t);say.t=setTimeout(()=>el.style.display='none',ms);
+}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function rnd(a,b){return Math.random()*(b-a)+a}
 
-const trees=[],houses=[],npcs=[],water=[];
-function addTree(x,y){trees.push({x,y,r:22})}
-function addHouse(x,y,w=100,h=75,type='casa'){houses.push({x,y,w,h,type})}
+function addTree(x,y,health=3){trees.push({x,y,r:24,health,maxHealth:health})}
+function addHouse(x,y,w,h,type='casa'){houses.push({x,y,w,h,type})}
 function addNPC(x,y,name,msg,kind='villager'){npcs.push({x,y,name,msg,kind})}
-for(let i=0;i<170;i++){let x=rnd(1,MW-2)*TILE,y=rnd(2,MH-2)*TILE;if(Math.abs(x-p.x)<350&&Math.abs(y-p.y)<280){i--;continue} addTree(x,y)}
-addHouse(8*TILE,24*TILE,120,90,'casa'); addHouse(17*TILE,24*TILE,120,90,'templo'); addHouse(14*TILE,34*TILE,100,75,'cabana'); addHouse(26*TILE,17*TILE,120,85,'casa');
-addNPC(20*TILE,28*TILE,'Ancião','A missão começa com um passo de fé. Atravesse a floresta e procure o caminho para o porto.','elder');
-addNPC(16*TILE,29*TILE,'Maria','Quando o medo chegar, pare, respire e ore.','friend');
-addNPC(23*TILE,30*TILE,'Elias','Nem todo perigo será visível aos olhos. Peça discernimento.','friend');
+function addWater(x,y,w,h){waterAreas.push({x,y,w,h})}
+function addFishSpot(x,y){fishSpots.push({x,y,hasFish:true})}
+function addEnemy(x,y,type){
+  const e=DEMONS[type];
+  enemies.push({x,y,r:18,type,hp:e.hp,maxHp:e.hp,damage:e.damage,name:e.name,icon:e.icon,active:true});
+}
+function addAngel(x,y,type){angels.push({x,y,r:20,type,blessingGiven:false});}
 
-function rectHitCircle(r,cx,cy,cr){let x=clamp(cx,r.x,r.x+r.w),y=clamp(cy,r.y,r.y+r.h);return (cx-x)**2+(cy-y)**2<cr**2}
-function blocked(x,y){if(x<20||y<20||x>world.w-20||y>world.h-20)return true;for(const t of trees)if((x-t.x)**2+(y-t.y)**2<(p.r+t.r-5)**2)return true;for(const h of houses)if(rectHitCircle(h,x,y,p.r))return true;return false}
+for(let i=0;i<400;i++){
+  let x=rnd(3,MW-3)*TILE,y=rnd(3,MH-3)*TILE;
+  if(Math.abs(x-p.x)<500&&Math.abs(y-p.y)<400)continue;
+  addTree(x,y)
+}
 
-function drawTree(t){ctx.fillStyle='#51351f';ctx.fillRect(t.x-6,t.y+7,12,28);ctx.fillStyle='#183d25';ctx.beginPath();ctx.arc(t.x,t.y,25,0,7);ctx.fill();ctx.fillStyle='#22552f';ctx.beginPath();ctx.arc(t.x-16,t.y+8,18,0,7);ctx.arc(t.x+16,t.y+8,18,0,7);ctx.fill()}
-function drawHouse(h){ctx.fillStyle='#76533a';ctx.fillRect(h.x-h.w/2,h.y-h.h/2,h.w,h.h);ctx.fillStyle=h.type==='templo'?'#55515a':'#56352c';ctx.beginPath();ctx.moveTo(h.x-h.w/2-8,h.y-h.h/2);ctx.lineTo(h.x,h.y-h.h/2-45);ctx.lineTo(h.x+h.w/2+8,h.y-h.h/2);ctx.closePath();ctx.fill();ctx.fillStyle='#2d2018';ctx.fillRect(h.x-12,h.y+5,24,40);ctx.fillStyle='#e8d38a';ctx.font='28px serif';ctx.textAlign='center';ctx.fillText(h.type==='templo'?'✝':'⌂',h.x,h.y-8)}
-function drawNPC(n){ctx.fillStyle=n.kind==='elder'?'#d9b24c':'#7b9eb0';ctx.fillRect(n.x-11,n.y-2,22,35);ctx.fillStyle='#c98e63';ctx.beginPath();ctx.arc(n.x,n.y-13,11,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.font='12px Arial';ctx.textAlign='center';ctx.fillText(n.name,n.x,n.y-30)}
-function drawPlayer(){ctx.fillStyle='#c98e63';ctx.beginPath();ctx.arc(p.x,p.y-17,12,0,7);ctx.fill();ctx.fillStyle='#e6dfc9';ctx.fillRect(p.x-13,p.y-5,26,38);ctx.fillStyle='#674b2f';ctx.fillRect(p.x-15,p.y-28,30,7);ctx.strokeStyle='#d7bc6a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x+10,p.y-1);ctx.lineTo(p.x+19,p.y+25);ctx.stroke()}
+addHouse(10*TILE,26*TILE,130,95,'casa');
+addHouse(20*TILE,26*TILE,150,110,'templo');
+addHouse(15*TILE,36*TILE,110,80,'cabana');
+addHouse(85*TILE,35*TILE,160,120,'santuário');
 
-function drawWorld(){ctx.fillStyle='#47723c';ctx.fillRect(0,0,W,H);
+addWater(45*TILE,0,12*TILE,world.h);
+addWater(75*TILE,15*TILE,40*TILE,35*TILE);
+
+for(let i=0;i<20;i++)addFishSpot((47+rnd(0,9))*TILE,rnd(5,MH-5)*TILE);
+
+addNPC(22*TILE,30*TILE,'Ancião Samuel',
+  '"Vigiai e orai, para que não entreis em tentação." Não é contra carne e sangue, mas contra os espíritos do mal. — Efésios 6:12. Equipe-se com a armadura de Deus. Resista ao diabo, e ele fugirá de você! — Tiago 4:7','elder');
+addNPC(18*TILE,32*TILE,'Lúcia','Ore em todo tempo no Espírito. Quando o medo vier, clame o nome de Jesus!','villager');
+addNPC(88*TILE,38*TILE,'Sumo Sacerdote','Bem-vindo ao Santuário. Ore e recupere suas forças espirituais.','priest');
+
+addAngel(25*TILE,22*TILE,'GABRIEL');
+addAngel(70*TILE,25*TILE,'MICHAEL');
+addAngel(100*TILE,45*TILE,'RAPHAEL');
+
+addEnemy(35*TILE,20*TILE,'PRIDE');
+addEnemy(42*TILE,35*TILE,'FEAR');
+addEnemy(52*TILE,25*TILE,'LIE');
+addEnemy(65*TILE,40*TILE,'DOUBT');
+addEnemy(78*TILE,30*TILE,'ANGER');
+
+function rectHitCircle(r,cx,cy,cr){
+  let x=clamp(cx,r.x-r.w/2,r.x+r.w/2),y=clamp(cy,r.y-r.h/2,r.y+r.h/2);
+  return (cx-x)**2+(cy-y)**2<cr**2
+}
+function pointInRect(px,py,r){
+  return px>=r.x-r.w/2&&px<=r.x+r.w/2&&py>=r.y-r.h/2&&py<=r.y+r.h/2
+}
+function inWater(x,y){
+  for(const w of waterAreas)if(pointInRect(x,y,w))return true;
+  return false
+}
+function blocked(x,y){
+  if(x<30||y<30||x>world.w-30||y>world.h-30)return true;
+  if(!p.isBoat&&inWater(x,y))return true;
+  for(const t of trees)if(t.health>0&&(x-t.x)**2+(y-t.y)**2<(p.r+t.r-6)**2)return true;
+  for(const h of houses)if(rectHitCircle(h,x,y,p.r))return true;
+  return false
+}
+
+function drawSky(){
+  let grad=ctx.createLinearGradient(0,0,0,H);
+  if(night){grad.addColorStop(0,'#0b1020');grad.addColorStop(1,'#1a2440');}
+  else{grad.addColorStop(0,'#ffd89b');grad.addColorStop(1,'#5a924a');}
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+}
+function drawGround(){
+  ctx.fillStyle='#3d6b32';ctx.fillRect(0,0,world.w,world.h);
+  ctx.fillStyle='#4a7c3c';
+  for(let x=0;x<world.w;x+=TILE*3)for(let y=0;y<world.h;y+=TILE*3)
+    if((x+y)%(TILE*6)===0)ctx.fillRect(x,y,TILE*1.5,TILE*1.5);
+  ctx.fillStyle='#b09261';ctx.fillRect(0,world.h/2-45,world.w,90);
+}
+function drawWater(w){
+  ctx.fillStyle=p.isBoat?'rgba(35,70,120,0.85)':'rgba(30,60,110,0.9)';
+  ctx.fillRect(w.x-w.w/2,w.y-w.h/2,w.w,w.h);
+}
+function drawTree(t){
+  if(t.health<=0)return;
+  ctx.fillStyle='rgba(0,0,0,0.15)';ctx.beginPath();ctx.ellipse(t.x+5,t.y+28,20,8,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#5c3c20';ctx.fillRect(t.x-7,t.y+5,14,32);
+  ctx.fillStyle='#1e5030';ctx.beginPath();ctx.arc(t.x,t.y-8,26,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#2a6840';ctx.beginPath();ctx.arc(t.x-14,t.y+2,18,0,Math.PI*2);ctx.arc(t.x+14,t.y+2,18,0,Math.PI*2);ctx.fill();
+  if(t.health<t.maxHealth){
+    ctx.fillStyle='#222';ctx.fillRect(t.x-15,t.y-45,30,5);
+    ctx.fillStyle='#6a4';ctx.fillRect(t.x-15,t.y-45,30*(t.health/t.maxHealth),5);
+  }
+}
+function drawHouse(h){
+  ctx.fillStyle=h.type==='santuário'?'#4a4a6a':'#8b6545';
+  ctx.fillRect(h.x-h.w/2,h.y-h.h/2,h.w,h.h);
+  ctx.fillStyle=h.type==='templo'?'#5a5560':h.type==='santuário'?'#3a3a5a':'#6b4530';
+  ctx.beginPath();ctx.moveTo(h.x-h.w/2-12,h.y-h.h/2);ctx.lineTo(h.x,h.y-h.h/2-55);
+  ctx.lineTo(h.x+h.w/2+12,h.y-h.h/2);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#3a2818';ctx.fillRect(h.x-12,h.y+5,24,45);
+  if(h.type==='templo'||h.type==='santuário'){
+    ctx.fillStyle='#ffd700';ctx.font='36px serif';ctx.textAlign='center';ctx.fillText('✝',h.x,h.y+15);
+  }
+}
+function drawNPC(n){
+  ctx.fillStyle=n.kind==='elder'?'#d4a030':n.kind==='priest'?'#7080c0':'#6a8c90';
+  ctx.fillRect(n.x-12,n.y,24,36);
+  ctx.fillStyle='#d9a87c';ctx.beginPath();ctx.arc(n.x,n.y-14,12,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='12px Arial';ctx.textAlign='cente' ctx.fillText(n.name,n.x,n.y-32);
+}
+function drawAngel(a){
+  const ang=ANGELS[a.type];
+  ctx.fillStyle='rgba(255,215,0,'+(.08+Math.sin(phase*3)*.04)+')';
+  ctx.beginPath();ctx.arc(a.x,a.y,45+Math.sin(phase*2)*5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,250,230,.85)';ctx.beginPath();ctx.arc(a.x,a.y,22,0,Math.PI*2);ctx.fill();
+  ctx.font='28px Arial';ctx.textAlign='center';ctx.fillText(ang.icon,a.x,a.y+10);
+  ctx.fillStyle='#ffd700';ctx.font='bold 11px Arial';ctx.fillText(ang.name,a.x,a.y-35);
+}
+function drawEnemy(e){
+  if(!e.active)return;
+  ctx.fillStyle='rgba(80,0,0,'+(.12+Math.sin(phase*2)*.05)+')';
+  ctx.beginPath();ctx.arc(e.x,e.y,35+Math.sin(phase*3)*3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#3a0000';ctx.beginPath();ctx.arc(e.x,e.y,18,0,Math.PI*2);ctx.fill();
+  ctx.font='24px Arial';ctx.textAlign='center';ctx.fillText(e.icon,e.x,e.y+8);
+  ctx.fillStyle='#ff5555';ctx.font='bold 10px Arial';ctx.fillText(e.name,e.x,e.y-30);
+  ctx.fillStyle='#222';ctx.fillRect(e.x-22,e.y-42,44,6);
+  ctx.fillStyle='#a80000';ctx.fillRect(e.x-22,e.y-42,44*(e.hp/e.maxHp),6);
+}
+function drawPlayer(){
+  if(p.isBoat){
+    ctx.fillStyle='#8b6030';
+    ctx.beginPath();ctx.moveTo(p.x-30,p.y+12);ctx.lineTo(p.x-24,p.y-8);ctx.lineTo(p.x+24,p.y-8);ctx.lineTo(p.x+30,p.y+12);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#d9a87c';ctx.beginPath();ctx.arc(p.x,p.y-20,10,0,Math.PI*2);ctx.fill();
+  }else{
+    ctx.fillStyle='#d9a87c';ctx.beginPath();ctx.arc(p.x,p.y-16,12,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e8d8c8';ctx.fillRect(p.x-13,p.y-5,26,34);
+    ctx.fillStyle='#5a4030';ctx.fillRect(p.x-15,p.y-26,30,6);
+    ctx.font='18px Arial';ctx.fillText('📖',p.x+14,p.y+5);
+  }
+}
+function drawWorld(){
+  drawSky();
   ctx.save();ctx.translate(-cam.x,-cam.y);
-  // paths
-  ctx.fillStyle='#b09261';ctx.fillRect(0,world.h/2-35,world.w,70);
-  ctx.fillStyle='#2f6684';ctx.fillRect(37*TILE,0,18*TILE,world.h);
-  ctx.fillStyle='#876642';ctx.fillRect(36*TILE,world.h/2-45,20*TILE,90);
-  // distant mountains
-  ctx.fillStyle='#355d42';ctx.beginPath();ctx.moveTo(0,12*TILE);for(let x=0;x<world.w;x+=120)ctx.lineTo(x,8*TILE+rnd(-40,40));ctx.lineTo(world.w,12*TILE);ctx.closePath();ctx.fill();
-  houses.forEach(drawHouse);trees.forEach(drawTree);npcs.forEach(drawNPC);drawPlayer();
+  drawGround();
+  waterAreas.forEach(drawWater);
+  houses.forEach(drawHouse);
+  trees.forEach(drawTree);
+  npcs.forEach(drawNPC);
+  angels.forEach(drawAngel);
+  enemies.forEach(drawEnemy);
+  drawPlayer();
+  if(boatBuilt&&!p.isBoat&&boat){
+    ctx.fillStyle='#8b6030';
+    ctx.beginPath();ctx.moveTo(boat.x-30,boat.y+12);ctx.lineTo(boat.x-24,boat.y-8);ctx.lineTo(boat.x+24,boat.y-8);ctx.lineTo(boat.x+30,boat.y+12);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='12px Arial';ctx.textAlign='center';ctx.fillText('Barco pronto!',boat.x,boat.y-15);
+  }
   ctx.restore();
 }
-function updateCam(){cam.x=clamp(p.x-W/2,0,world.w-W);cam.y=clamp(p.y-H/2,0,world.h-H)}
+function drawMinimap(){
+  mctx.fillStyle='#0a0a0a';mctx.fillRect(0,0,180,140);
+  const sx=180/world.w,sy=140/world.h;
+  mctx.fillStyle='#2a5a8a';
+  for(const w of waterAreas)mctx.fillRect((w.x-w.w/2)*sx,(w.y-w.h/2)*sy,w.w*sx,w.h*sy);
+  mctx.fillStyle='#b89060';
+  for(const h of houses)mctx.fillRect((h.x-h.w/2)*sx,(h.y-h.h/2)*sy,Math.max(4,h.w*sx),Math.max(4,h.h*sy));
+  mctx.fillStyle='#e5c46a';mctx.beginPath();mctx.arc(p.x*sx,p.y*sy,4,0,Math.PI*2);mctx.fill();
+  mctx.fillStyle='#6ab0c0';
+  for(const a of angels){mctx.beginPath();mctx.arc(a.x*sx,a.y*sy,3,0,Math.PI*2);mctx.fill();}
+  mctx.fillStyle='#c04040';
+  for(const e of enemies)if(e.active){mctx.beginPath();mctx.arc(e.x*sx,e.y*sy,2,0,Math.PI*2);mctx.fill();}
+}
 
-function move(dt){let dx=(keys.right?1:0)-(keys.left?1:0),dy=(keys.down?1:0)-(keys.up?1:0);if(dx||dy){let l=Math.hypot(dx,dy);dx/=l;dy/=l;let nx=p.x+dx*p.speed*dt,ny=p.y+dy*p.speed*dt;if(!blocked(nx,p.y))p.x=nx;if(!blocked(p.x,ny))p.y=ny}}
-function nearby(){let best=null,bd=75;for(const n of npcs){let d=Math.hypot(n.x-p.x,n.y-p.y);if(d<bd){best=n;bd=d}}return best}
-function interact(){let n=nearby();if(!n){say('Aproxime-se de um NPC, templo ou cabana.');return}say(`<b>${n.name}</b><br><br>${n.msg}`);if(n.kind==='elder'&&!questDone){questDone=true;stats.faith+=10;stats.wisdom+=8;document.getElementById('questText').innerHTML='✓ Missão concluída!<br><br>Próxima etapa: siga pela estrada até o porto.';say('<b>MISSÃO COMPLETADA</b><br>O Ancião confiou a você a próxima etapa da jornada. Fé +10 • Sabedoria +8',5000)}}
-function pray(){if(prayerCD>0)return;prayerCD=8;stats.faith=clamp(stats.faith+5,0,100);stats.peace=clamp(stats.peace+8,0,100);stats.authority=clamp(stats.authority+2,0,100);say('<b>🙏 ORAÇÃO</b><br>Você se ajoelha e busca a Deus.<br>Fé +5 • Paz +8 • Autoridade +2')}
-function sleep(){if(!night){say('🌙 Ainda é dia. Procure um abrigo quando anoitecer.');return}stats.health=clamp(stats.health+20,0,100);stats.peace=clamp(stats.peace+10,0,100);stats.hunger=clamp(stats.hunger+8,0,100);stats.thirst=clamp(stats.thirst+8,0,100);say('<b>🌙 SONHO ESPIRITUAL</b><br>Você vê uma grande luz no céu e ouve: “Não temas. Continue o caminho.”',6000)}
-function showInv(){document.getElementById('items').innerHTML=Object.entries(inv).map(([k,v])=>`<div class="item"><span>${k}</span><b>${v}</b></div>`).join('');document.getElementById('inventory').style.display='block'}
-document.getElementById('closeInv').onclick=()=>document.getElementById('inventory').style.display='none';
-document.getElementById('pray').onclick=pray;document.getElementById('inv').onclick=showInv;document.getElementById('sleep').onclick=sleep;document.getElementById('interact').onclick=interact;
-
-addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='w'||k==='arrowup')keys.up=true;if(k==='s'||k==='arrowdown')keys.down=true;if(k==='a'||k==='arrowleft')keys.left=true;if(k==='d'||k==='arrowright')keys.right=true;if(k==='e')interact();if(k==='r')pray();if(k==='i')showInv()});
-addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(k==='w'||k==='arrowup')keys.up=false;if(k==='s'||k==='arrowdown')keys.down=false;if(k==='a'||k==='arrowleft')keys.left=false;if(k==='d'||k==='arrowright')keys.right=false});
-document.querySelectorAll('.jbtn').forEach(b=>{let k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
-
-function tick(t){let dt=Math.min((t-last)/1000,.05);last=t;phase+=dt;prayerCD=Math.max(0,prayerCD-dt);
-  // 90 s day/night cycle
-  night=(phase%90)>55;
-  if(night)document.body.style.background='#050914';else document.body.style.background='#07100b';
-  stats.hunger=clamp(stats.hunger+dt*.7,0,100);stats.thirst=clamp(stats.thirst+dt*.9,0,100);
-  if(stats.hunger>88||stats.thirst>88)stats.health=clamp(stats.health-dt*1.2,0,100);
-  move(dt);updateCam();drawWorld();drawLighting();
-  for(const [key,[,prop]] of Object.entries(statNames)){document.getElementById('f-'+prop).style.width=clamp(stats[prop],0,100)+'%';document.getElementById('v-'+prop).textContent=Math.round(stats[prop])}
-  requestAnimationFrame(tick)}
-function drawLighting(){if(!night)return;ctx.fillStyle='rgba(5,10,25,.48)';ctx.fillRect(0,0,W,H);ctx.fillStyle='rgba(255,245,190,.12)';ctx.beginPath();ctx.arc(W-120,100,55,0,7);ctx.fill()}
-requestAnimationFrame(tick);
-say('<b>🌅 UM NOVO CAMINHO</b><br>Explore a vila. Encontre o Ancião e converse com ele.',5000);
-</script>
-</body>
-</html>
+function updateCam(){
+  cam.x=clamp(p.x-W/2,0,world.w-W);
+  cam.y=clamp(p.y-H/2,0,world.h-H);
+}
+function move(dt){
+  let dx=(keys.right?1:0)-(keys.left?1:0);
+  let dy=(keys.down?1:0)-(keys.up?1:0);
+  if(dx||dy){
+    let l=Math.hypot(dx,dy);dx/=l;dy/=l;
+    let nx=p.x+dx*p.speed*dt*(p.isBoat?p.boatSpeed/p.speed:1);
+    let ny=p.y+dy*
